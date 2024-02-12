@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bakalover/parlia/roles/idgen"
+	"bakalover/parlia/idgen"
 )
 
 func main() {
-	PNumber, ANumber, LNumber := idgen.GenerateInitConfig()
-
+	pNumber, aNumber, lNumber := idgen.GenerateInitConfig()
+	
 }

@@ -24,6 +24,7 @@ func (p *Proposer) MaybeDie() bool {
 	if rand.Float64() < deathChance {
 		p.Ctx.Clear()
 		time.Sleep(kDeathTime)
+
 		return true
 	}
 	return false
