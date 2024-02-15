@@ -1,5 +1,5 @@
 ## Parlia simulation
-+ Multi-Decree Paxos algorithm "baby" implementation.
++ Multi-Decree Paxos algorithm toy implementation.
 + Non-deterministic simulation with pseudo-random network delays and nodes death.
 
 ### Origin:
