@@ -19,13 +19,15 @@ type InitConfig struct {
 	DeathChance    float64
 }
 
-func GenerateInitConfig() *InitConfig {
+var GlobalInitConfig InitConfig
+
+func GenerateInitConfig() {
 
 	kProposers := rand.Intn(initPSeed)*2 + 3
 	kAcceptors := rand.Intn(initASeed)*2 + 1 // Prefferable to be odd (Fault-tolerance points)
 	kLearners := rand.Intn(initLSeed)*2 + 3
 
-	return &InitConfig{
+	GlobalInitConfig = InitConfig{
 		kProposers,
 		kAcceptors,
 		kLearners,
@@ -33,4 +35,8 @@ func GenerateInitConfig() *InitConfig {
 		deathDuration,
 		deathChance,
 	}
+}
+
+func GetConfig() *InitConfig {
+	return &GlobalInitConfig
 }

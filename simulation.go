@@ -9,36 +9,41 @@ import (
 )
 
 func main() {
-	initConfig := paxos.GenerateInitConfig()
-	RunSimulation(initConfig)
+	Init()
+	RunSimulation()
 }
 
-func RunSimulation(initConfig *paxos.InitConfig) {
+func Init() {
+	paxos.GenerateInitConfig()
+	paxos.MakeNetwork(paxos.GetConfig())
+}
+
+func RunSimulation() {
 
 	fmt.Println("-----------------------------Running-----------------------------")
 
-	registry := paxos.MakeRegistry(initConfig)
+	config := paxos.GetConfig()
 
 	var wg sync.WaitGroup
-	wg.Add(initConfig.KAcceptors + initConfig.KLearners + initConfig.KProposers)
+	wg.Add(config.KAcceptors + config.KLearners + config.KProposers)
 
-	for i := 0; i < initConfig.KAcceptors; i++ {
+	for i := 0; i < config.KAcceptors; i++ {
 		go func() {
-			run.Node(registry, initConfig, node.NodeAcceptor, run.SimpleMode)
+			run.Node(node.TypeAcceptor, run.SimpleMode)
 			wg.Done()
 		}()
 	}
 
-	for i := 0; i < initConfig.KLearners; i++ {
+	for i := 0; i < config.KLearners; i++ {
 		go func() {
-			run.Node(registry, initConfig, node.NodeLearner, run.SimpleMode)
+			run.Node(node.TypeLearner, run.SimpleMode)
 			wg.Done()
 		}()
 	}
 
-	for i := 0; i < initConfig.KProposers; i++ {
+	for i := 0; i < config.KProposers; i++ {
 		go func() {
-			run.Node(registry, initConfig, node.NodeProposer, run.SimpleMode)
+			run.Node(node.TypeProposer, run.SimpleMode)
 			wg.Done()
 		}()
 	}

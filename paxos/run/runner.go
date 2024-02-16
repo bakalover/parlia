@@ -25,29 +25,29 @@ type Runner interface {
 }
 
 type RunnerBase struct {
-	Registry *paxos.Registry
+	Network *paxos.Network
 	Config   *paxos.InitConfig
 	Id       RunnerId
 	Slave    node.NodeBase
 }
 
-func Node(registry *paxos.Registry, config *paxos.InitConfig, nodeType node.NodeType, mode RunMode) {
-	runner := GetRunner(registry, config, nodeType, mode)
+func Node(nodeType node.NodeType, mode RunMode) {
+	runner := GetRunner(paxos.GetNetwork(), paxos.GetConfig(), nodeType, mode)
 	runner.Run()
 }
 
 func GetNode(nodeType node.NodeType) node.NodeBase {
 	switch nodeType {
-	case node.NodeAcceptor:
+	case node.TypeAcceptor:
 		return node.Acceptor{}
-	case node.NodeLearner:
+	case node.TypeLearner:
 		return node.Learner{}
 	default:
 		return node.Proposer{}
 	}
 }
 
-func GetRunner(registry *paxos.Registry, config *paxos.InitConfig, nodeType node.NodeType, mode RunMode) Runner {
+func GetRunner(registry *paxos.Network, config *paxos.InitConfig, nodeType node.NodeType, mode RunMode) Runner {
 	base := RunnerBase{registry, config, IdGenRunner(), GetNode(nodeType)}
 	if mode == FaultMode {
 		return FaultyRunner{base}

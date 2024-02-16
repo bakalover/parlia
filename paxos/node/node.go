@@ -9,9 +9,9 @@ type NodeId uint64
 type NodeType uint8
 
 const (
-	NodeAcceptor NodeType = 0
-	NodeProposer NodeType = 1
-	NodeLearner  NodeType = 2
+	TypeAcceptor NodeType = 0
+	TypeProposer NodeType = 1
+	TypeLearner  NodeType = 2
 )
 
 var globalNodeId uint64 = 0
