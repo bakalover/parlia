@@ -36,5 +36,5 @@ func (runner FaultyRunner) Run() {
 		}
 	}()
 	timer.Stop()
-	fmt.Printf("Runner Id: %d, Steps: %d, Reborn count: %d Mode: Fault", runner.Id, kIter, kDeath)
+	fmt.Printf("Runner Id: %d, Steps: %d, Reborn count: %d Mode: Fault\n", runner.Id, kIter, kDeath)
 }
