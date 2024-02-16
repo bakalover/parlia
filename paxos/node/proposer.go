@@ -5,28 +5,22 @@ import (
 )
 
 type Proposer struct {
-	
+	// TODO
 }
 
-func (p *Proposer) Propose() {
-
+func (p Proposer) Propose() {
+	// TODO
 }
 
-func (p *Proposer) Accept() {
-
+func (p Proposer) Accept() {
+	// TODO
 }
 
-func (p *Proposer) MaybeDie() bool {
-	// if rand.Float64() < deathChance {
-	// 	p.Ctx.ClearLog()
-	// 	time.Sleep(kDeathTime)
-	// 	return true
-	// }
+func (p Proposer) MaybeDie() bool {
+	// TODO
 	return false
 }
 
-func (p *Proposer) Step(stepTime time.Duration) {
-	for {
-		// TODO
-	}
+func (p Proposer) Step(stepTime time.Duration) {
+	// TODO
 }

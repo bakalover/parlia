@@ -17,6 +17,6 @@ type Ballot struct {
 }
 
 // Contention point across all proposers
-func GenerateBallotNumber(id string) BallotNumber {
+func IdGenBallot(id string) BallotNumber {
 	return BallotNumber{KLocal: atomic.AddUint64(&globalBallotSeed, 1), Owner: id}
 }

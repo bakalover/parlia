@@ -6,11 +6,11 @@ type Acceptor struct {
 	// TODO
 }
 
-func (p *Acceptor) MaybeDie() bool {
+func (a Acceptor) MaybeDie() bool {
 	// TODO
 	return false
 }
 
-func (p *Acceptor) Step(stepTime time.Duration) {
+func (a Acceptor) Step(stepTime time.Duration) {
 	// TODO
 }

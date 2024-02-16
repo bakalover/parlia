@@ -6,15 +6,18 @@ import (
 )
 
 type NodeId uint64
+type NodeType uint8
 
-var globalNodeSeed uint64 = 0
+const (
+	NodeAcceptor NodeType = 0
+	NodeProposer NodeType = 1
+	NodeLearner  NodeType = 2
+)
 
-func Increase() {
-	globalNodeSeed += 1
-}
+var globalNodeId uint64 = 0
 
 func GenerateNodeId() NodeId {
-	return NodeId(atomic.AddUint64(&globalNodeSeed, 1))
+	return NodeId(atomic.AddUint64(&globalNodeId, 1))
 }
 
 type NodeBase interface {
@@ -24,5 +27,5 @@ type NodeBase interface {
 	MaybeDie() bool
 
 	// Perform some activity during some time
-	Step(time.Duration)
+	Step(stepTime time.Duration)
 }
