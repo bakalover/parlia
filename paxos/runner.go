@@ -2,6 +2,7 @@ package paxos
 
 import (
 	"bakalover/parlia/paxos/node"
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -9,7 +10,9 @@ import (
 var stepSeed = 10
 
 type FaultyRunner struct {
-	Slave node.NodeBase
+	Config *InitConfig
+	Id     int
+	Slave  node.NodeBase
 }
 
 func PickTime() time.Duration {
@@ -17,8 +20,24 @@ func PickTime() time.Duration {
 }
 
 func (runner *FaultyRunner) Run() {
-	runner.Slave.Step(PickTime())
-	runner.Slave.MaybeDie()
+	timer := time.NewTimer(runner.Config.SimulationTime)
+	var kIter, kDeath uint64 = 1, 0
+	go func() {
+		for {
+			runner.Slave.Step(PickTime())
+			if haveDied := runner.Slave.MaybeDie(); haveDied {
+				kDeath++
+			}
+			select {
+			case <-timer.C:
+				return
+			default:
+				kIter++
+			}
+		}
+	}()
+	timer.Stop()
+	fmt.Printf("Runner Id: %d, Iterations: %d, Node death count: %d", runner.Id, kIter, kDeath)
 }
 
 func Acceptor(registry *Registry, config *InitConfig) {
