@@ -34,6 +34,7 @@ func RunSimulation() {
 		}()
 	}
 
+	// TODO: split number of faulty replicas
 	for i := 0; i < config.Kreplicas; i++ {
 		go func() {
 			run.Replica(run.SimpleMode)

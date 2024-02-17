@@ -5,6 +5,8 @@ type Prequest struct {
 	Ballot BallotNumber
 }
 
+// TODO: Other types of requests
+
 type RequestType uint8
 
 const (
@@ -50,7 +52,7 @@ func GetNetwork() *Network {
 func (net *Network) Broadcast(req Prequest, t RequestType) {
 
 	var ser []byte
-	// Serialize request
+	// TODO: Serialize request
 	if t == Prepare || t == Accept {
 		for _, ch := range net.AcceptorChans {
 			ch <- NetRequest{ser, t}

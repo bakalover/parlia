@@ -47,7 +47,7 @@ func (r SimpleReplica) MaybeDie() bool {
 func (r SimpleReplica) Step(stepTime time.Duration) {
 	chans := AssociatedChans(r.Id)
 
-	// TODO Syncronize all pools and inject timer fault sig
+	// TODO: Syncronize all pools and inject timer fault signal
 
 	// Client Pool
 	go func() {
@@ -58,7 +58,7 @@ func (r SimpleReplica) Step(stepTime time.Duration) {
 		}
 	}()
 
-	// Acceptor Pool
+	// Acceptor-Role Pool
 	go func() {
 		for req := range *chans.acceptorChan {
 			go func() {
@@ -67,7 +67,7 @@ func (r SimpleReplica) Step(stepTime time.Duration) {
 		}
 	}()
 
-	// Proposer Pool
+	// Proposer-Role Pool
 	go func() {
 		for req := range *chans.proposerChan {
 			go func() {
