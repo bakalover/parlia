@@ -1,8 +1,8 @@
 package main
 
 import (
+	"bakalover/parlia/client"
 	"bakalover/parlia/paxos"
-	"bakalover/parlia/paxos/node"
 	"bakalover/parlia/paxos/run"
 	"fmt"
 	"sync"
@@ -25,25 +25,18 @@ func RunSimulation() {
 	config := paxos.GetConfig()
 
 	var wg sync.WaitGroup
-	wg.Add(config.KAcceptors + config.KLearners + config.KProposers)
+	wg.Add(config.Kreplicas + config.Kclients)
 
-	for i := 0; i < config.KAcceptors; i++ {
+	for i := 0; i < config.Kclients; i++ {
 		go func() {
-			run.Node(node.TypeAcceptor, run.SimpleMode)
+			client.Client()
 			wg.Done()
 		}()
 	}
 
-	for i := 0; i < config.KLearners; i++ {
+	for i := 0; i < config.Kreplicas; i++ {
 		go func() {
-			run.Node(node.TypeLearner, run.SimpleMode)
-			wg.Done()
-		}()
-	}
-
-	for i := 0; i < config.KProposers; i++ {
-		go func() {
-			run.Node(node.TypeProposer, run.SimpleMode)
+			run.Replica(run.SimpleMode)
 			wg.Done()
 		}()
 	}

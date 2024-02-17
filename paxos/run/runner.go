@@ -2,7 +2,7 @@ package run
 
 import (
 	"bakalover/parlia/paxos"
-	"bakalover/parlia/paxos/node"
+	"bakalover/parlia/paxos/replica"
 	"sync/atomic"
 )
 
@@ -26,32 +26,18 @@ type Runner interface {
 
 type RunnerBase struct {
 	Network *paxos.Network
-	Config   *paxos.InitConfig
-	Id       RunnerId
-	Slave    node.NodeBase
+	Config  *paxos.InitConfig
+	Id      RunnerId
+	Slave   replica.Replica
 }
 
-func Node(nodeType node.NodeType, mode RunMode) {
-	runner := GetRunner(paxos.GetNetwork(), paxos.GetConfig(), nodeType, mode)
-	runner.Run()
-}
-
-func GetNode(nodeType node.NodeType) node.NodeBase {
-	switch nodeType {
-	case node.TypeAcceptor:
-		return node.Acceptor{}
-	case node.TypeLearner:
-		return node.Learner{}
-	default:
-		return node.Proposer{}
-	}
-}
-
-func GetRunner(registry *paxos.Network, config *paxos.InitConfig, nodeType node.NodeType, mode RunMode) Runner {
-	base := RunnerBase{registry, config, IdGenRunner(), GetNode(nodeType)}
+func Replica(mode RunMode) {
+	var runner Runner
+	base := RunnerBase{paxos.GetNetwork(), paxos.GetConfig(), IdGenRunner(), replica.SimpleReplica{}}
 	if mode == FaultMode {
-		return FaultyRunner{base}
+		runner = FaultyRunner{base}
 	} else {
-		return SimpleRunner{base}
+		runner = SimpleRunner{base}
 	}
+	runner.Run()
 }
