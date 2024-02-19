@@ -10,3 +10,5 @@ Specifying for each node
 ### Origin:
 + [Simple](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf)
 + [Greek](https://lamport.azurewebsites.net/pubs/lamport-paxos.pdf)
++ [Pseudo](https://pdos.csail.mit.edu/archive/6.824-2013/notes/paxos-code.html)
+
