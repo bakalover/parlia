@@ -1,9 +1,10 @@
 package run
 
 import (
-	"bakalover/parlia/paxos"
-	"bakalover/parlia/paxos/replica"
 	"sync/atomic"
+
+	"github.com/bakalover/parlia/paxos"
+	"github.com/bakalover/parlia/paxos/replica"
 )
 
 type RunMode uint8

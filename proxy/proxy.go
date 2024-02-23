@@ -1,0 +1,3 @@
+package proxy
+
+// Future optimization: leader coordination, batching requests and so on...

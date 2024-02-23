@@ -1,10 +1,11 @@
 package run
 
 import (
-	"bakalover/parlia/paxos"
 	"fmt"
 	"math/rand"
 	"time"
+
+	"github.com/bakalover/parlia/paxos"
 )
 
 var kSteps = 7

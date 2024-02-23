@@ -1,9 +1,13 @@
 package replica
 
 import (
-	"bakalover/parlia/paxos"
+	"context"
 	"sync/atomic"
 	"time"
+
+	"github.com/bakalover/parlia/paxos"
+
+	"github.com/bakalover/tate"
 )
 
 type NodeId uint64
@@ -11,7 +15,7 @@ type NodeId uint64
 var globalNodeId uint64 = 0
 
 type ReplicaChans struct {
-	requestChan  *chan paxos.NetRequest
+	requestChan  *chan []byte
 	acceptorChan *chan paxos.NetRequest
 	proposerChan *chan paxos.NetRequest
 }
@@ -36,53 +40,96 @@ type Replica interface {
 }
 
 type SimpleReplica struct {
-	Id NodeId
+	Id  NodeId
+	Log []string
 }
 
-// --------------------------Replica---------------------------
+// --------------------------Replica----------------------------
 func (r SimpleReplica) MaybeDie() bool {
 	return false
 }
 
 func (r SimpleReplica) Step(stepTime time.Duration) {
 	chans := AssociatedChans(r.Id)
+	ctx, cancel := context.WithCancel(context.Background())
+	net := paxos.GetNetwork()
 
-	// TODO: Syncronize all pools and inject timer fault signal
+	var (
+		replicaPool  tate.Nursery
+		clientPool   tate.Nursery
+		acceptorPool tate.Nursery
+		proposerPool tate.Nursery
+	)
 
-	// Client Pool
-	go func() {
+	replicaPool.Add(func() {
 		for req := range *chans.requestChan {
-			go func() {
-				// Process req
-			}()
+			select {
+			case <-ctx.Done():
+				break
+			default:
+				clientPool.Add(func() {
+					// Self Broadcast
+					net.Broadcast(req, paxos.Proposers, paxos.Init)
+				})
+			}
 		}
-	}()
-
-	// Acceptor-Role Pool
-	go func() {
-		for req := range *chans.acceptorChan {
-			go func() {
-				// Process req
-			}()
-		}
-	}()
-
-	// Proposer-Role Pool
-	go func() {
+		clientPool.Join()
+	}).Add(func() {
 		for req := range *chans.proposerChan {
-			go func() {
-				// Process req
-			}()
+			select {
+			case <-ctx.Done():
+				break
+			default:
+				proposerPool.Add(func() {
+					// Receive Self broadcast message
+					// Proposer Logic
+				})
+			}
 		}
-	}()
+		proposerPool.Join()
+	}).Add(func() {
+		for req := range *chans.acceptorChan {
+			select {
+			case <-ctx.Done():
+				break
+			default:
+				acceptorPool.Add(func() {
+					// Acceptor Logic
+				})
+			}
+		}
+		acceptorPool.Join()
+	})
+
+	time.AfterFunc(stepTime, func() {
+		cancel()
+	})
+
+	replicaPool.Join()
 }
 
-// --------------------------Replica---------------------------
+// --------------------------Replica----------------------------
 
 // --------------------------Acceptor---------------------------
+
+func (r *SimpleReplica) Promise(b paxos.Ballot) {
+
+}
+
+func (r *SimpleReplica) Accepted(n paxos.BallotNumber) {
+
+}
 
 // --------------------------Acceptor---------------------------
 
 // --------------------------Proposer---------------------------
+
+func (r *SimpleReplica) Prepare(b paxos.Ballot) {
+
+}
+
+func (r *SimpleReplica) Accept(n paxos.BallotNumber) {
+
+}
 
 // --------------------------Proposer---------------------------
