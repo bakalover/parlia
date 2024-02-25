@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/bakalover/parlia/paxos"
-
 	"github.com/bakalover/tate"
 )
 
@@ -25,7 +24,7 @@ func GenerateNodeId() NodeId {
 }
 
 func AssociatedChans(id NodeId) ReplicaChans {
-	net := paxos.GetNetwork()
+	net := paxos.GetWWW()
 	return ReplicaChans{&net.RequestChans[id], &net.AcceptorChans[id], &net.ProposerChans[id]}
 }
 
@@ -52,7 +51,7 @@ func (r SimpleReplica) MaybeDie() bool {
 func (r SimpleReplica) Step(stepTime time.Duration) {
 	chans := AssociatedChans(r.Id)
 	ctx, cancel := context.WithCancel(context.Background())
-	net := paxos.GetNetwork()
+	net := paxos.GetWWW()
 
 	var (
 		replicaPool  tate.Nursery

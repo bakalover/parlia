@@ -22,20 +22,26 @@ const (
 	Proposers = 1
 )
 
+// Internal cluster network message unit
 type NetRequest struct {
 	data []byte
 	req  RequestType
 }
 
+// Just bunch of wires | Global communication point
+// All communications represented in channels
+// Communication pattern: MPSC for each channel
 type Network struct {
-	// All communications represented in channels
-	// Communication pattern: MPSC for separate channel
-	RequestChans  []chan []byte     //Client sends only data
-	AcceptorChans []chan NetRequest // Need type to distinguish
-	ProposerChans []chan NetRequest // Need type to distinguish
+	// Client sends only data
+	// Outer part of Network
+	RequestChans []chan []byte
+
+	// Inner part of Network
+	AcceptorChans []chan NetRequest
+	ProposerChans []chan NetRequest
 }
 
-var GlobalNetwork Network
+var WWW Network
 
 func MakeNetwork(config *InitConfig) {
 	requestChans := make([]chan []byte, config.Kreplicas)
@@ -48,11 +54,11 @@ func MakeNetwork(config *InitConfig) {
 		proposerChans[i] = make(chan NetRequest)
 	}
 
-	GlobalNetwork = Network{requestChans, acceptorChans, proposerChans}
+	WWW = Network{requestChans, acceptorChans, proposerChans}
 }
 
-func GetNetwork() *Network {
-	return &GlobalNetwork
+func GetWWW() *Network {
+	return &WWW
 }
 
 func (net *Network) Broadcast(data []byte, b BroadcastType, req RequestType) {

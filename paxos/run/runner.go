@@ -34,7 +34,7 @@ type RunnerBase struct {
 
 func Replica(mode RunMode) {
 	var runner Runner
-	base := RunnerBase{paxos.GetNetwork(), paxos.GetConfig(), IdGenRunner(), replica.SimpleReplica{}}
+	base := RunnerBase{paxos.GetWWW(), paxos.GetConfig(), IdGenRunner(), replica.SimpleReplica{}}
 	if mode == FaultMode {
 		runner = FaultyRunner{base}
 	} else {
