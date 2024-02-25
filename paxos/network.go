@@ -22,6 +22,8 @@ const (
 	Proposers = 1
 )
 
+const NetBufSize = 1024
+
 // Internal cluster network message unit
 type NetRequest struct {
 	data []byte
@@ -49,9 +51,9 @@ func MakeNetwork(config *InitConfig) {
 	proposerChans := make([]chan NetRequest, config.Kreplicas)
 
 	for i := 0; i < config.Kreplicas; i++ {
-		requestChans[i] = make(chan []byte)
-		acceptorChans[i] = make(chan NetRequest)
-		proposerChans[i] = make(chan NetRequest)
+		requestChans[i] = make(chan []byte, NetBufSize)
+		acceptorChans[i] = make(chan NetRequest, NetBufSize)
+		proposerChans[i] = make(chan NetRequest, NetBufSize)
 	}
 
 	WWW = Network{requestChans, acceptorChans, proposerChans}
@@ -72,6 +74,3 @@ func (net *Network) Broadcast(data []byte, b BroadcastType, req RequestType) {
 		}
 	}
 }
-
-func Serialize()   {}
-func Deserialize() {}
