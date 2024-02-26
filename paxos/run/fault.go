@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bakalover/parlia/paxos"
+	"github.com/bakalover/tate"
 )
 
 var kSteps = 7
@@ -21,21 +22,18 @@ type FaultyRunner struct {
 
 func (runner FaultyRunner) Run() {
 	timer := time.NewTimer(runner.Config.SimulationTime)
-	var kIter, kDeath uint64 = 0, 0
-	go func() {
-		for {
-			runner.Slave.Step(PickTime())
-			if haveDied := runner.Slave.MaybeDie(); haveDied {
-				kDeath++
-			}
-			select {
-			case <-timer.C:
-				return
-			default:
-				kIter++
-			}
+	var kIter uint64 = 0
+
+	tate.NewRepeater().Repeat(func() {
+		runner.Slave.Step(PickTime())
+		select {
+		case <-timer.C:
+			return
+		default:
+			kIter++
 		}
-	}()
+	}).Join()
+	
 	timer.Stop()
-	fmt.Printf("Runner Id: %d, Steps: %d, Reborn count: %d Mode: Fault\n", runner.Id, kIter, kDeath)
+	fmt.Printf("Runner Id: %d, Restarts: %d, Mode: Fault\n", runner.Id, kIter)
 }

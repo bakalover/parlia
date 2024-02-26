@@ -1,10 +1,12 @@
 package main
 
 import (
-	"github.com/bakalover/parlia/client"
-	"github.com/bakalover/parlia/paxos"
-	"github.com/bakalover/parlia/paxos/run"
 	"fmt"
+
+	"github.com/bakalover/parlia/paxos"
+	"github.com/bakalover/parlia/paxos/client"
+	"github.com/bakalover/parlia/paxos/proxy"
+	"github.com/bakalover/parlia/paxos/run"
 
 	"github.com/bakalover/tate"
 )
@@ -16,7 +18,6 @@ func main() {
 
 func Init() {
 	paxos.GenerateInitConfig()
-	paxos.MakeNetwork(paxos.GetConfig())
 }
 
 func RunSimulation() {
@@ -25,17 +26,23 @@ func RunSimulation() {
 
 	config := paxos.GetConfig()
 
-	var sim tate.Nursery
+	sim := tate.NewNursery(nil)
 
 	for i := 0; i < config.Kclients; i++ {
-		sim.Add(func() {
+		sim.Add(func(c *tate.Linker) {
 			client.Client()
+		})
+	}
+
+	for i := 0; i < config.Kproxy; i++ {
+		sim.Add(func(c *tate.Linker) {
+			proxy.Proxy()
 		})
 	}
 
 	// TODO: split number of faulty replicas
 	for i := 0; i < config.Kreplicas; i++ {
-		sim.Add(func() {
+		sim.Add(func(c *tate.Linker) {
 			run.Replica(run.SimpleMode)
 		})
 	}

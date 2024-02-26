@@ -2,120 +2,56 @@ package replica
 
 import (
 	"context"
-	"sync/atomic"
+	"net/http"
 	"time"
 
 	"github.com/bakalover/parlia/paxos"
 	"github.com/bakalover/tate"
 )
 
-type NodeId uint64
-
-var globalNodeId uint64 = 0
-
-type ReplicaChans struct {
-	requestChan  *chan []byte
-	acceptorChan *chan paxos.NetRequest
-	proposerChan *chan paxos.NetRequest
-}
-
-func GenerateNodeId() NodeId {
-	return NodeId(atomic.AddUint64(&globalNodeId, 1))
-}
-
-func AssociatedChans(id NodeId) ReplicaChans {
-	net := paxos.GetWWW()
-	return ReplicaChans{&net.RequestChans[id], &net.AcceptorChans[id], &net.ProposerChans[id]}
-}
-
-type Replica interface {
-	// Die with some smaaaaaaall probability
-	// Death = context drop + goroutine sleep
-	// Bool indicates whether goroutine "has died"
-	MaybeDie() bool
-
-	// Perform some activity during some time
-	Step(stepTime time.Duration)
-}
-
-type SimpleReplica struct {
-	Id  NodeId
-	Log []string
+type Replica struct {
+	log    []string
+	server *http.Server
 }
 
 // --------------------------Replica----------------------------
-func (r SimpleReplica) MaybeDie() bool {
-	return false
+
+func (r *Replica) Kill() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	r.server.Shutdown(ctx)
+	r.log = nil
 }
 
-func (r SimpleReplica) Step(stepTime time.Duration) {
-	chans := AssociatedChans(r.Id)
-	ctx, cancel := context.WithCancel(context.Background())
-	net := paxos.GetWWW()
+func (r *Replica) Step(stepTime time.Duration) {
 
-	var (
-		replicaPool  tate.Nursery
-		clientPool   tate.Nursery
-		acceptorPool tate.Nursery
-		proposerPool tate.Nursery
-	)
+	r.server = &http.Server{Addr: "todoport", Handler: nil}
+	serverRoutine := tate.NewNursery(nil)
 
-	replicaPool.Add(func() {
-		for req := range *chans.requestChan {
-			select {
-			case <-ctx.Done():
-				break
-			default:
-				clientPool.Add(func() {
-					// Self Broadcast
-					net.Broadcast(req, paxos.Proposers, paxos.Init)
-				})
-			}
-		}
-		clientPool.Join()
-	}).Add(func() {
-		for req := range *chans.proposerChan {
-			select {
-			case <-ctx.Done():
-				break
-			default:
-				proposerPool.Add(func() {
-					// Receive Self broadcast message
-					// Proposer Logic
-				})
-			}
-		}
-		proposerPool.Join()
-	}).Add(func() {
-		for req := range *chans.acceptorChan {
-			select {
-			case <-ctx.Done():
-				break
-			default:
-				acceptorPool.Add(func() {
-					// Acceptor Logic
-				})
-			}
-		}
-		acceptorPool.Join()
+	serverRoutine.Add(func(c *tate.Linker) {
+		r.server.ListenAndServe()
 	})
 
 	time.AfterFunc(stepTime, func() {
-		cancel()
+		r.Kill()
 	})
 
-	replicaPool.Join()
+	serverRoutine.Join()
+}
+
+func (r *Replica) Apply(command string) {
+	//Prepare
 }
 
 // --------------------------Replica----------------------------
 
 // --------------------------Acceptor---------------------------
 
-func (r *SimpleReplica) Promise(b paxos.Ballot) {
+func (r *Replica) Promise(b paxos.Ballot) {
 
 }
 
-func (r *SimpleReplica) Accepted(n paxos.BallotNumber) {
+func (r *Replica) Accepted(n paxos.BallotNumber) {
 
 }
 
@@ -123,11 +59,11 @@ func (r *SimpleReplica) Accepted(n paxos.BallotNumber) {
 
 // --------------------------Proposer---------------------------
 
-func (r *SimpleReplica) Prepare(b paxos.Ballot) {
+func (r *Replica) Prepare(b paxos.Ballot) {
 
 }
 
-func (r *SimpleReplica) Accept(n paxos.BallotNumber) {
+func (r *Replica) Accept(n paxos.BallotNumber) {
 
 }
 

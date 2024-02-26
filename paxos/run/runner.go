@@ -26,15 +26,14 @@ type Runner interface {
 }
 
 type RunnerBase struct {
-	Network *paxos.Network
-	Config  *paxos.InitConfig
-	Id      RunnerId
-	Slave   replica.Replica
+	Config *paxos.InitConfig
+	Id     RunnerId
+	Slave  replica.Replica
 }
 
 func Replica(mode RunMode) {
 	var runner Runner
-	base := RunnerBase{paxos.GetWWW(), paxos.GetConfig(), IdGenRunner(), replica.SimpleReplica{}}
+	base := RunnerBase{paxos.GetConfig(), IdGenRunner(), replica.Replica{}}
 	if mode == FaultMode {
 		runner = FaultyRunner{base}
 	} else {
