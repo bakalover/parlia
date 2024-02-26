@@ -25,25 +25,25 @@ func RunSimulation() {
 	fmt.Println("-----------------------------Running-----------------------------")
 
 	config := paxos.GetConfig()
-
+	portGen := &paxos.Generator{}
 	sim := tate.NewNursery(nil)
 
 	for i := 0; i < config.Kclients; i++ {
 		sim.Add(func(c *tate.Linker) {
-			client.Client()
+			client.Client(portGen)
 		})
 	}
 
 	for i := 0; i < config.Kproxy; i++ {
 		sim.Add(func(c *tate.Linker) {
-			proxy.Proxy()
+			proxy.Proxy(portGen)
 		})
 	}
 
 	// TODO: split number of faulty replicas
 	for i := 0; i < config.Kreplicas; i++ {
 		sim.Add(func(c *tate.Linker) {
-			run.Replica(run.SimpleMode)
+			run.Replica(portGen, run.SimpleMode)
 		})
 	}
 

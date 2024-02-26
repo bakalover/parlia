@@ -24,9 +24,9 @@ func ApplyCommand(cl *rpc.Client) {
 	}
 }
 
-func Client() {
+func Client(port *paxos.Generator) {
 
-	cl, err := rpc.DialHTTP("tcp", ":todoport")
+	cl, err := rpc.DialHTTP("tcp", "todo: search port")
 
 	if err != nil {
 		log.Fatal(err)

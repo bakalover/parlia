@@ -2,6 +2,7 @@ package replica
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,22 +11,25 @@ import (
 )
 
 type Replica struct {
-	log    []string
-	server *http.Server
+	log     []string
+	server  *http.Server
+	PortGen *paxos.Generator
+	port    string
 }
 
 // --------------------------Replica----------------------------
 
 func (r *Replica) Kill() {
 	ctx, cancel := context.WithCancel(context.Background())
+	r.PortGen.InvalidatePort(r.port)
 	defer cancel()
 	r.server.Shutdown(ctx)
 	r.log = nil
 }
 
 func (r *Replica) Step(stepTime time.Duration) {
-
-	r.server = &http.Server{Addr: "todoport", Handler: nil}
+	r.port = fmt.Sprintf(":%s", r.PortGen.GeneratePort())
+	r.server = &http.Server{Addr: r.port, Handler: nil}
 	serverRoutine := tate.NewNursery(nil)
 
 	serverRoutine.Add(func(c *tate.Linker) {

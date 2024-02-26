@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"log"
 	"net"
 	"net/http"
@@ -21,7 +22,7 @@ func (p *ProxyService) Apply(command string) error {
 	return p.cl.Call("Replica.Apply", command, nil)
 }
 
-func Proxy() {
+func Proxy(portGen *paxos.Generator) {
 
 	proxy := new(ProxyService)
 	rpc.Register(proxy)
@@ -35,7 +36,7 @@ func Proxy() {
 
 	proxy.cl = cl
 
-	l, err := net.Listen("tcp", ":todoport")
+	l, err := net.Listen("tcp", fmt.Sprintf(":%s", portGen.GeneratePort()))
 
 	if err != nil {
 		log.Fatal(err)
