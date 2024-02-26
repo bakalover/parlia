@@ -5,6 +5,8 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+
+	"github.com/bakalover/parlia/paxos"
 )
 
 type ProxyService struct {
@@ -15,6 +17,7 @@ func (p *ProxyService) Apply(command string) error {
 	// Future optimization:
 	// leader coordination,
 	// batching requests and so on...
+	paxos.InjectDelay()
 	return p.cl.Call("Replica.Apply", command, nil)
 }
 

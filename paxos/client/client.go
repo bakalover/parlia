@@ -17,6 +17,7 @@ func PickCommand() string {
 }
 
 func ApplyCommand(cl *rpc.Client) {
+	paxos.InjectDelay()
 	err := cl.Call("ProxyService.Apply", PickCommand(), nil)
 	if err != nil {
 		log.Println(err)
