@@ -31,13 +31,13 @@ type RunnerBase struct {
 	Slave  replica.Replica
 }
 
-func Replica(portGen *paxos.Generator, mode RunMode) {
+func Replica(addrGen *paxos.Generator, mode RunMode) {
 	var runner Runner
 
 	base := RunnerBase{
 		paxos.GetConfig(),
 		IdGenRunner(),
-		replica.Replica{PortGen: portGen},
+		replica.Replica{AddrGen: addrGen},
 	}
 
 	if mode == FaultMode {

@@ -11,7 +11,7 @@ import (
 )
 
 type Client struct {
-	port      *paxos.Generator
+	addrGen   *paxos.Generator
 	rpcClient *rpc.Client
 	backoff   Backoff
 }
@@ -28,7 +28,7 @@ func (client *Client) SendCommand() {
 }
 
 func (client *Client) Run() {
-	cl, err := rpc.DialHTTP("tcp", "todo: search port")
+	cl, err := rpc.DialHTTP("tcp", client.addrGen.GenerateAddr())
 
 	if err != nil {
 		log.Fatal(err)
