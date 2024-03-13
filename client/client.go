@@ -1,12 +1,10 @@
-package client
+package main
 
 import (
 	"log"
 	"net/rpc"
 	"time"
 
-	"github.com/bakalover/parlia/paxos"
-	"github.com/bakalover/parlia/paxos/command"
 	"github.com/bakalover/tate"
 )
 
@@ -36,7 +34,7 @@ func (client *Client) Run() {
 
 	client.rpcClient = cl
 
-	client.backoff = Backoff{Init: 500 * time.Millisecond, Mult: 2, RandWindow: 30 * time.Millisecond}
+	client.backoff = DefaultBackoff
 
 	rp := tate.NewRepeater()
 
