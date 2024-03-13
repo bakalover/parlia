@@ -9,6 +9,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	pb "github.com/bakalover/parlia/proto"
@@ -21,6 +22,7 @@ type Proxy struct {
 	pb.UnimplementedProxyServer
 	client            pb.ReplicaClient
 	logger            *log.Logger
+	mutex             sync.Mutex
 	availableReplicas []string
 	targetAddr        string
 	myAddr            string
@@ -31,11 +33,12 @@ const (
 	replicaConfigPath = "./config/replica_ports.txt"
 )
 
-// var dialOpts []grpc.DialOption
-
 func (p *Proxy) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, error) {
 
 	//Context???
+
+	p.mutex.Lock()
+	defer p.mutex.Unlock()
 
 	resp, err := p.client.Apply(ctx, command)
 	if err != nil {
