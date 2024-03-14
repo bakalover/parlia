@@ -1,6 +1,7 @@
-package main
+package backoff
 
 import (
+	"log"
 	"time"
 )
 
@@ -21,10 +22,11 @@ var DefaultBackoff = Backoff{
 }
 
 func (b *Backoff) Update() {
-	b.CurrentDelay = time.Duration(float64(b.CurrentDelay.Milliseconds())*b.Multiplier) + time.Duration(float64(b.BaseDelay.Milliseconds())*b.Jitter)
+	b.CurrentDelay = time.Duration(float64(b.CurrentDelay)*b.Multiplier) + time.Duration(float64(b.BaseDelay)*b.Jitter)
 }
 
 func (b *Backoff) Next() time.Duration {
+	log.Println(b.CurrentDelay)
 	defer b.Update()
 	return b.CurrentDelay
 }

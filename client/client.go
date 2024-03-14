@@ -1,51 +1,119 @@
 package main
 
 import (
+	"bufio"
+	"context"
+	"fmt"
 	"log"
-	"net/rpc"
+	"math/rand"
+	"os"
+	"sync"
 	"time"
 
+	"github.com/bakalover/parlia/client/backoff"
+	pb "github.com/bakalover/parlia/proto"
 	"github.com/bakalover/tate"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+)
+
+const (
+	proxyConfigPath = "./config/proxy_ports.txt"
+	simTime         = 40 * time.Second
 )
 
 type Client struct {
-	addrGen   *paxos.Generator
-	rpcClient *rpc.Client
-	backoff   Backoff
+	client           pb.ProxyClient
+	backoff          backoff.Backoff
+	logger           *log.Logger
+	mutex            sync.Mutex
+	availableProxies []string
+	targetAddr       string
 }
 
-func (client *Client) SendCommand() {
-	paxos.InjectDelay()
-	err := client.rpcClient.Call("ProxyService.Apply", command.RandCommand(2), nil)
+func (cl *Client) AvailableProxy() string {
+	return cl.availableProxies[rand.Intn(len(cl.availableProxies))]
+}
+
+func (cl *Client) SendCommand() {
+	cl.mutex.Lock()
+	defer cl.mutex.Unlock()
+
+	_, err := cl.client.Apply(context.Background(), &pb.Command{Type: "hi"})
+
 	if err != nil {
-		log.Println(err)
-		time.Sleep(client.backoff.Next())
+		cl.logger.Printf("Proxy with addr: %v unavailable", cl.targetAddr)
+		time.Sleep(cl.backoff.Next())
 	} else {
-		client.backoff.Reset()
+		cl.backoff.Reset()
+	}
+
+}
+
+func (cl *Client) ConnToCluster() {
+	proxyAddr := cl.AvailableProxy()
+	conn, err := grpc.Dial(proxyAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		cl.logger.Fatalf("Fail to dial: %v", err)
+	} else {
+		cl.targetAddr = proxyAddr
+		cl.client = pb.NewProxyClient(conn)
 	}
 }
 
-func (client *Client) Run() {
-	cl, err := rpc.DialHTTP("tcp", client.addrGen.GenerateAddr())
+func (cl *Client) Run() {
+	//Proxies are not faulty
+	cl.ConnToCluster()
 
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	client.rpcClient = cl
-
-	client.backoff = DefaultBackoff
-
-	rp := tate.NewRepeater()
+	await := make(chan bool)
 
 	// DDOS =)
+	rp := tate.NewRepeater()
 	rp.Repeat(func() {
-		client.SendCommand()
-	}).Repeat(func() {
-		client.SendCommand()
-	}).Repeat(func() {
-		client.SendCommand()
+		cl.SendCommand()
 	})
 
-	time.AfterFunc(paxos.SimulationTime, func() { rp.Join() })
+	time.AfterFunc(simTime, func() {
+		rp.Join()
+		await <- true
+	})
+
+	<-await
+}
+
+func main() {
+
+	logger := log.New(os.Stdout, "INFO: ", log.Ltime|log.Lshortfile)
+
+	//=============================Files================================
+	proxyConfig, err := os.Open(proxyConfigPath)
+	if err != nil {
+		logger.Fatalf("Error opening file: %v", err)
+		return
+	}
+	defer proxyConfig.Close()
+	//=============================Files================================
+
+	var proxyAddrs []string
+
+	scanner := bufio.NewScanner(proxyConfig)
+	var clientRoutines tate.Nursery
+
+	for scanner.Scan() {
+		proxyPort := scanner.Text()
+		if len(proxyPort) <= 4 || len(proxyPort) >= 6 {
+			logger.Fatalf("Parsed invalid replica port: %v", proxyPort)
+		}
+
+		addr := fmt.Sprintf("localhost:%s", proxyPort)
+		logger.Printf("Connecting to proxy with addr: %v", addr)
+		proxyAddrs = append(proxyAddrs, addr)
+		cl := &Client{backoff: backoff.DefaultBackoff, logger: logger, availableProxies: proxyAddrs}
+		clientRoutines.Add(func() {
+			cl.Run()
+		})
+	}
+
+	clientRoutines.Join()
+
 }
