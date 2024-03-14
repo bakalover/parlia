@@ -42,47 +42,45 @@ func (p *Proxy) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, erro
 
 	resp, err := p.client.Apply(ctx, command)
 	if err != nil {
-		p.logger.Println("Replica unavailable")
-		p.TryConnToCluster()
+		p.logger.Println("Replica is unavailable")
+		p.ConnToCluster() // Change target Replica
 	}
 
-	return resp, err
+	return resp, err // If err => client retries
 }
 
 func (p *Proxy) AvailableReplica() string {
 	return p.availableReplicas[rand.Intn(len(p.availableReplicas))]
 }
 
-func (p *Proxy) TryConnToCluster() bool {
+func (p *Proxy) ConnToCluster() {
 	replicaAddr := p.AvailableReplica()
 	conn, err := grpc.Dial(replicaAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		p.logger.Printf("Fail to dial: %v", err)
-		return false
 	} else {
 		p.targetAddr = replicaAddr
 		p.client = pb.NewReplicaClient(conn)
-		return true
+		log.Printf("Established connection: Proxy <-> Replica | %v <-> %v", p.myAddr, p.targetAddr)
 	}
 }
 
 func main() {
+
+	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+
 	//=============================Files================================
 	proxyConfig, err := os.Open(proxyConfigPath)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
+		logger.Fatalf("Error opening file: %v", err)
 	}
 	replicaConfig, err := os.Open(replicaConfigPath)
 	if err != nil {
-		fmt.Println("Error opening file:", err)
-		return
+		logger.Fatalf("Error opening file: %v ", err)
 	}
 	defer proxyConfig.Close()
 	defer replicaConfig.Close()
 	//=============================Files================================
-
-	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 
 	replicaScanner := bufio.NewScanner(replicaConfig)
 	var replicaAddrs []string
@@ -120,7 +118,7 @@ func main() {
 		}
 
 		// Proxy as client
-		proxy.TryConnToCluster()
+		proxy.ConnToCluster()
 
 		// Proxy as server
 		l, err := net.Listen("tcp", proxyAddr)
@@ -130,6 +128,7 @@ func main() {
 		grpcServer := grpc.NewServer()
 		serverHandles = append(serverHandles, grpcServer)
 		pb.RegisterProxyServer(grpcServer, proxy)
+
 		serverRoutines.Add(func() {
 			grpcServer.Serve(l)
 		})

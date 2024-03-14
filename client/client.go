@@ -42,7 +42,7 @@ func (cl *Client) SendCommand() {
 	_, err := cl.client.Apply(context.Background(), &pb.Command{Type: "hi"})
 
 	if err != nil {
-		cl.logger.Printf("Proxy with addr: %v unavailable", cl.targetAddr)
+		cl.logger.Printf("Cluster is unavailbale: proxy addr - %v", cl.targetAddr)
 		time.Sleep(cl.backoff.Next())
 	} else {
 		cl.backoff.Reset()
@@ -109,6 +109,7 @@ func main() {
 		logger.Printf("Connecting to proxy with addr: %v", addr)
 		proxyAddrs = append(proxyAddrs, addr)
 		cl := &Client{backoff: backoff.DefaultBackoff, logger: logger, availableProxies: proxyAddrs}
+		
 		clientRoutines.Add(func() {
 			cl.Run()
 		})

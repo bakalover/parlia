@@ -1,7 +1,6 @@
 package backoff
 
 import (
-	"log"
 	"time"
 )
 
@@ -26,7 +25,6 @@ func (b *Backoff) Update() {
 }
 
 func (b *Backoff) Next() time.Duration {
-	log.Println(b.CurrentDelay)
 	defer b.Update()
 	return b.CurrentDelay
 }
