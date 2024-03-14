@@ -1,4 +1,4 @@
-package paxos
+package main
 
 import (
 	"sync/atomic"

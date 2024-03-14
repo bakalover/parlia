@@ -33,9 +33,12 @@ const (
 	replicaConfigPath = "./config/replica_ports.txt"
 )
 
+
+//===============================RPC Service===============================
 func (p *Proxy) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, error) {
 
-	//Context???
+	// Context???
+	// TODO: batch window 10ms ~ rpc stream
 
 	p.mutex.Lock()
 	defer p.mutex.Unlock()
@@ -48,6 +51,8 @@ func (p *Proxy) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, erro
 
 	return resp, err // If err => client retries
 }
+//===============================RPC Service===============================
+
 
 func (p *Proxy) AvailableReplica() string {
 	return p.availableReplicas[rand.Intn(len(p.availableReplicas))]
@@ -67,7 +72,7 @@ func (p *Proxy) ConnToCluster() {
 
 func main() {
 
-	logger := log.New(os.Stdout, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+	logger := log.New(os.Stdout, "INFO: ", log.Ltime|log.Lshortfile)
 
 	//=============================Files================================
 	proxyConfig, err := os.Open(proxyConfigPath)
@@ -94,6 +99,9 @@ func main() {
 	}
 
 	var serverRoutines, cancels tate.Nursery
+
+	defer serverRoutines.Join()
+	defer cancels.Join()
 
 	//=====================Manual Cancelling=====================
 	var serverHandles []*grpc.Server
@@ -143,8 +151,5 @@ func main() {
 		}
 	})
 	//=================================Await===================================
-
-	cancels.Join()
-	serverRoutines.Join()
 
 }

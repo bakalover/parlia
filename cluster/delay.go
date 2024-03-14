@@ -1,10 +1,12 @@
-package paxos
+package main
 
 import (
 	"math/rand"
 	"time"
 )
 
-func MajorDelay() {
-	time.Sleep(time.Duration(rand.Intn(300)) * time.Millisecond)
+func MaybeMajorDelay() {
+	if rand.Intn(11) == 2 {
+		time.Sleep(time.Duration(500) * time.Millisecond)
+	}
 }

@@ -1,16 +1,19 @@
-package run
+package main
 
 import (
 	"sync/atomic"
-
-	"github.com/bakalover/parlia/paxos"
-	"github.com/bakalover/parlia/paxos/replica"
+	"time"
 )
 
 type RunMode uint8
 type RunnerId uint32
 
 var globalRunnerId uint32 = 0
+
+const (
+	safeMargin = 2 * time.Second
+	simTime    = 50 * time.Second
+)
 
 func IdGenRunner() RunnerId {
 	return RunnerId(atomic.AddUint32(&globalRunnerId, 1))
@@ -26,18 +29,16 @@ type Runner interface {
 }
 
 type RunnerBase struct {
-	Config *paxos.InitConfig
-	Id     RunnerId
-	Slave  replica.Replica
+	Id    RunnerId
+	Slave Replica
 }
 
-func Replica(addrGen *paxos.Generator, mode RunMode) {
+func RunReplica( c *Cluster, mode RunMode) {
 	var runner Runner
 
 	base := RunnerBase{
-		paxos.GetConfig(),
 		IdGenRunner(),
-		replica.Replica{AddrGen: addrGen},
+		Replica{cluster: c, logger: c.GetLogger()},
 	}
 
 	if mode == FaultMode {
@@ -45,6 +46,6 @@ func Replica(addrGen *paxos.Generator, mode RunMode) {
 	} else {
 		runner = SimpleRunner{base}
 	}
-	
+
 	runner.Run()
 }
