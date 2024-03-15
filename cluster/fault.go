@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"math/rand"
 	"time"
 
@@ -37,5 +36,5 @@ func (runner FaultyRunner) Run() {
 
 	<-await
 
-	fmt.Printf("Runner Id: %d, Restarts: %d, Mode: Fault\n", runner.Id, kIter)
+	runner.Logger.Printf("Runner Id: %d, Restarts: %d, Mode: Fault\n", runner.Id, kIter)
 }

@@ -30,11 +30,10 @@ type Proxy struct {
 
 const (
 	proxyConfigPath   = "./config/proxy_ports.txt"
-	replicaConfigPath = "./config/replica_ports.txt"
+	replicaConfigPath = "./config/replica_config.txt"
 )
 
-
-//===============================RPC Service===============================
+// ===============================RPC Service===============================
 func (p *Proxy) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, error) {
 
 	// Context???
@@ -51,8 +50,8 @@ func (p *Proxy) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, erro
 
 	return resp, err // If err => client retries
 }
-//===============================RPC Service===============================
 
+//===============================RPC Service===============================
 
 func (p *Proxy) AvailableReplica() string {
 	return p.availableReplicas[rand.Intn(len(p.availableReplicas))]

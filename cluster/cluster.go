@@ -6,13 +6,14 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"sync"
 
 	"github.com/bakalover/tate"
 )
 
 const (
-	replicaConfigPath = "./config/replica_ports.txt"
+	replicaConfigPath = "./config/replica_config.txt"
 )
 
 type Cluster struct {
@@ -25,7 +26,7 @@ func (c *Cluster) InvalidateAddr(addr string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	if c.addrs[addr] {
-		c.logger.Fatalln("Trying take occupied address:%v", addr)
+		c.logger.Fatalf("Trying take occupied address:%v", addr)
 	}
 	c.addrs[addr] = true
 }
@@ -39,12 +40,12 @@ func (c *Cluster) PickAddr() (string, error) {
 			return addr, nil
 		}
 	}
-	return "", errors.New("No available addr")
+	return "", errors.New("no available addr")
 }
 
-func (c *Cluster) InitPortRegistry(addrs []string) {
-	for _, addr := range addrs {
-		c.addrs[addr] = false
+func (c *Cluster) InitAddrRegistry(configs []ReplicaConfig) {
+	for _, config := range configs {
+		c.addrs[config.Addr] = false
 	}
 }
 
@@ -52,15 +53,15 @@ func (c *Cluster) GetLogger() *log.Logger {
 	return c.logger
 }
 
-func (c *Cluster) Run(addrs []string) {
-	c.InitPortRegistry(addrs)
+func (c *Cluster) Run(configs []ReplicaConfig) {
+	c.InitAddrRegistry(configs)
 
 	var replicaRoutines tate.Nursery
 	defer replicaRoutines.Join()
 
-	for _, _ = range c.addrs {
+	for _, config := range configs {
 		replicaRoutines.Add(func() {
-			RunReplica(c, SimpleMode)
+			RunReplica(c, config.Mode)
 		})
 	}
 }
@@ -78,16 +79,24 @@ func main() {
 	//=============================Files================================
 
 	scanner := bufio.NewScanner(replicaConfig)
-	var replicaAddrs []string
+	var replicaConfigs []ReplicaConfig
+
 	for scanner.Scan() {
-		replicaPort := scanner.Text()
+		config := strings.Split(scanner.Text(), " ")
+		replicaPort := config[0]
+		replicaMode := config[1]
+
 		if len(replicaPort) <= 4 || len(replicaPort) >= 6 {
 			logger.Fatalf("Parsed invalid replica port: %v", replicaPort)
 		}
+
+		if replicaMode != "Trust" && replicaMode != "Faulty" {
+			logger.Fatalf("Invalide replica mode: %v\n Avaliable:\n- Trust\n- Faulty", replicaMode)
+		}
 		addr := fmt.Sprintf("localhost:%v", replicaPort)
-		replicaAddrs = append(replicaAddrs, addr)
+		replicaConfigs = append(replicaConfigs, ReplicaConfig{addr, RunMode(replicaMode)})
 	}
 
 	c := &Cluster{logger: logger}
-	c.Run(replicaAddrs)
+	c.Run(replicaConfigs)
 }

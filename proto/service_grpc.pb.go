@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v5.26.0--rc3
-// source: service.proto
+// source: proto/service.proto
 
 package proto
 
@@ -101,7 +101,7 @@ var Proxy_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "service.proto",
+	Metadata: "proto/service.proto",
 }
 
 // ReplicaClient is the client API for Replica service.
@@ -109,6 +109,8 @@ var Proxy_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type ReplicaClient interface {
 	Apply(ctx context.Context, in *Command, opts ...grpc.CallOption) (*Empty, error)
+	Prepare(ctx context.Context, in *PrepareRequest, opts ...grpc.CallOption) (*Promise, error)
+	Accept(ctx context.Context, in *AcceptRequest, opts ...grpc.CallOption) (*Accepted, error)
 }
 
 type replicaClient struct {
@@ -128,11 +130,31 @@ func (c *replicaClient) Apply(ctx context.Context, in *Command, opts ...grpc.Cal
 	return out, nil
 }
 
+func (c *replicaClient) Prepare(ctx context.Context, in *PrepareRequest, opts ...grpc.CallOption) (*Promise, error) {
+	out := new(Promise)
+	err := c.cc.Invoke(ctx, "/Replica/Prepare", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *replicaClient) Accept(ctx context.Context, in *AcceptRequest, opts ...grpc.CallOption) (*Accepted, error) {
+	out := new(Accepted)
+	err := c.cc.Invoke(ctx, "/Replica/Accept", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ReplicaServer is the server API for Replica service.
 // All implementations must embed UnimplementedReplicaServer
 // for forward compatibility
 type ReplicaServer interface {
 	Apply(context.Context, *Command) (*Empty, error)
+	Prepare(context.Context, *PrepareRequest) (*Promise, error)
+	Accept(context.Context, *AcceptRequest) (*Accepted, error)
 	mustEmbedUnimplementedReplicaServer()
 }
 
@@ -142,6 +164,12 @@ type UnimplementedReplicaServer struct {
 
 func (UnimplementedReplicaServer) Apply(context.Context, *Command) (*Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Apply not implemented")
+}
+func (UnimplementedReplicaServer) Prepare(context.Context, *PrepareRequest) (*Promise, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Prepare not implemented")
+}
+func (UnimplementedReplicaServer) Accept(context.Context, *AcceptRequest) (*Accepted, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Accept not implemented")
 }
 func (UnimplementedReplicaServer) mustEmbedUnimplementedReplicaServer() {}
 
@@ -174,6 +202,42 @@ func _Replica_Apply_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Replica_Prepare_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PrepareRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReplicaServer).Prepare(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Replica/Prepare",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReplicaServer).Prepare(ctx, req.(*PrepareRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Replica_Accept_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AcceptRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ReplicaServer).Accept(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/Replica/Accept",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ReplicaServer).Accept(ctx, req.(*AcceptRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // Replica_ServiceDesc is the grpc.ServiceDesc for Replica service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -185,7 +249,15 @@ var Replica_ServiceDesc = grpc.ServiceDesc{
 			MethodName: "Apply",
 			Handler:    _Replica_Apply_Handler,
 		},
+		{
+			MethodName: "Prepare",
+			Handler:    _Replica_Prepare_Handler,
+		},
+		{
+			MethodName: "Accept",
+			Handler:    _Replica_Accept_Handler,
+		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "service.proto",
+	Metadata: "proto/service.proto",
 }

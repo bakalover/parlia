@@ -1,16 +1,42 @@
 syntax = "proto3";
 option go_package = "github.com/bakalover/parlia/proto";
 
-service Proxy {
-    rpc Apply(Command) returns(Empty);
+message Command { string Type = 1; }
+message Empty {}
+
+service Proxy { rpc Apply(Command) returns (Empty); }
+
+// Globally unique
+message ProposalNumber { uint64 Value = 1; }
+
+message Proposal {
+  ProposalNumber Number = 1;
+  string Value = 2;
 }
+//================================Phase I===============================
+message PrepareRequest {
+  uint64 Slot = 1;
+  ProposalNumber Number = 2;
+}
+
+message Promise {
+  bool ack = 1;
+  ProposalNumber advice = 2; // Help to retry if quorum fails
+  optional Proposal vote = 3;
+}
+//================================Phase I===============================
+
+//================================Phase II==============================
+message AcceptRequest { Proposal proposal = 1; }
+
+message Accepted {
+  bool ack = 1;
+  ProposalNumber advice = 2; // Help to retry if quorum fails
+}
+//================================Phase II==============================
 
 service Replica {
-    rpc Apply(Command) returns(Empty);
+  rpc Apply(Command) returns (Empty);
+  rpc Prepare(PrepareRequest) returns (Promise);
+  rpc Accept(AcceptRequest) returns (Accepted);
 }
-
-message Command {
-    string type = 1;
-}
-
-message Empty{}

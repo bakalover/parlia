@@ -20,8 +20,6 @@ type Replica struct {
 	addr    string
 }
 
-//=================================Replica==================================
-
 func (r *Replica) Kill() {
 	r.server.GracefulStop()
 	r.log = nil
@@ -63,29 +61,12 @@ func (p *Replica) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, er
 	return nil, nil
 }
 
+func (p *Replica) Prepare(ctx context.Context, req *pb.PrepareRequest) (*pb.Promise, error) {
+	return nil, nil
+}
+
+func (p *Replica) Accept(ctx context.Context, req *pb.AcceptRequest) (*pb.Accepted, error) {
+	return nil, nil
+}
+
 //===============================RPC Service================================
-
-//=================================Replica==================================
-
-
-// ================================Acceptor=================================
-func (r *Replica) Promise(b Ballot) { // To rpc
-
-}
-
-func (r *Replica) Accepted(n BallotNumber) { // To rpc
-
-}
-
-// ================================Acceptor=================================
-
-// ================================Proposer=================================
-func (r *Replica) Prepare(b Ballot) { // To rpc
-
-}
-
-func (r *Replica) Accept(n BallotNumber) { // To rpc
-
-}
-
-//================================Proposer=================================
