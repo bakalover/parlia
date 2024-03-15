@@ -1,4 +1,4 @@
-package main
+package cluster
 
 type SimpleRunner struct {
 	RunnerBase
@@ -6,5 +6,5 @@ type SimpleRunner struct {
 
 func (runner SimpleRunner) Run() {
 	runner.Slave.Step(simTime + safeMargin)
-	runner.Logger.Printf("Runner Id: %d, Steps: %d, Reborn count: %d, Mode: Simple\n", runner.Id, 1, 0)
+	runner.Logger.Printf("Runner Id: %d, Steps: %d, Mode: Trust\n", runner.Id, 1)
 }

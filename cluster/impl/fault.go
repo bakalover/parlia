@@ -1,4 +1,4 @@
-package main
+package cluster
 
 import (
 	"math/rand"
@@ -7,11 +7,13 @@ import (
 	"github.com/bakalover/tate"
 )
 
-var kSteps = 7
-var stepSeed = int(simTime) / (int(time.Second) * kSteps)
+const (
+	kSteps   = 11277
+	stepSeed = simTime / time.Duration(kSteps)
+)
 
 func PickStepTime() time.Duration {
-	return time.Duration(rand.Intn(stepSeed)) * time.Second
+	return time.Duration(rand.Intn(int(stepSeed)))
 }
 
 type FaultyRunner struct {
@@ -36,5 +38,5 @@ func (runner FaultyRunner) Run() {
 
 	<-await
 
-	runner.Logger.Printf("Runner Id: %d, Restarts: %d, Mode: Fault\n", runner.Id, kIter)
+	runner.Logger.Printf("Runner Id: %d, Steps: %d, Mode: Faulty\n", runner.Id, kIter)
 }

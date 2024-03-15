@@ -1,4 +1,4 @@
-package main
+package cluster
 
 import (
 	"context"
@@ -14,10 +14,10 @@ import (
 type Replica struct {
 	pb.UnimplementedReplicaServer
 	log     []string
-	cluster *Cluster
-	logger  *log.Logger
 	server  *grpc.Server
 	addr    string
+	Cluster *Cluster
+	Logger  *log.Logger
 }
 
 func (r *Replica) Kill() {
@@ -26,9 +26,9 @@ func (r *Replica) Kill() {
 }
 
 func (r *Replica) Step(stepTime time.Duration) {
-	addr, err := r.cluster.PickAddr()
+	addr, err := r.Cluster.PickAddr()
 	if err != nil {
-		r.logger.Fatalf("Cannot pick addr")
+		r.Logger.Fatalf("Cannot pick addr")
 	}
 
 	r.addr = addr
@@ -36,20 +36,25 @@ func (r *Replica) Step(stepTime time.Duration) {
 	//Setting up grpc server
 	l, err := net.Listen("tcp", r.addr)
 	if err != nil {
-		r.logger.Fatalf("Failed to listen: %v", err)
+		r.Logger.Fatalf("Failed to listen: %v", err)
 	}
 	grpcServer := grpc.NewServer()
 	r.server = grpcServer
 	pb.RegisterReplicaServer(grpcServer, r)
 
-	//Launch server
+	// Launch server then gracefull shutdown
+	// New Step ONLY after end of shutdown -> await on Kill() -> Join() await on Kill
 	var serverRoutine tate.Nursery
 	serverRoutine.Add(func() {
 		grpcServer.Serve(l)
-	})
-
-	time.AfterFunc(stepTime, func() {
-		r.Kill()
+		r.Cluster.InvalidateAddr(r.addr)
+	}).Add(func() {
+		await := make(chan bool)
+		time.AfterFunc(stepTime, func() {
+			r.Kill()
+			await <- true
+		})
+		<-await
 	})
 
 	serverRoutine.Join()
@@ -58,14 +63,17 @@ func (r *Replica) Step(stepTime time.Duration) {
 //===============================RPC Service===============================
 
 func (p *Replica) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, error) {
+	MaybeMajorDelay()
 	return nil, nil
 }
 
 func (p *Replica) Prepare(ctx context.Context, req *pb.PrepareRequest) (*pb.Promise, error) {
+	MaybeMajorDelay()
 	return nil, nil
 }
 
 func (p *Replica) Accept(ctx context.Context, req *pb.AcceptRequest) (*pb.Accepted, error) {
+	MaybeMajorDelay()
 	return nil, nil
 }
 

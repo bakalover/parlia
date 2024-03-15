@@ -1,4 +1,4 @@
-package main
+package cluster
 
 import (
 	"log"
@@ -12,8 +12,8 @@ type RunnerId uint32
 var globalRunnerId uint32 = 0
 
 const (
-	safeMargin = 2 * time.Second
-	simTime    = 50 * time.Second
+	safeMargin = 1 * time.Second
+	simTime    = 5 * time.Second
 )
 
 type ReplicaConfig struct {
@@ -26,8 +26,8 @@ func IdGenRunner() RunnerId {
 }
 
 const (
-	TrustMode = "Trust"
-	FaultMode = "Faulty"
+	TrustMode = RunMode("Trust")
+	FaultMode = RunMode("Faulty")
 )
 
 type Runner interface {
@@ -37,7 +37,7 @@ type Runner interface {
 type RunnerBase struct {
 	Id     RunnerId
 	Logger *log.Logger
-	Slave  Replica
+	Slave  *Replica
 }
 
 func RunReplica(c *Cluster, mode RunMode) {
@@ -46,9 +46,8 @@ func RunReplica(c *Cluster, mode RunMode) {
 	base := RunnerBase{
 		IdGenRunner(),
 		c.GetLogger(),
-		Replica{cluster: c, logger: c.GetLogger()},
+		&Replica{Cluster: c, Logger: c.GetLogger()},
 	}
-
 	if mode == FaultMode {
 		runner = FaultyRunner{base}
 	} else {
