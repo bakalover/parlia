@@ -1,4 +1,4 @@
-package backoff
+package client
 
 import (
 	"time"

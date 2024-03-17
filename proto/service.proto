@@ -1,7 +1,15 @@
 syntax = "proto3";
 option go_package = "github.com/bakalover/parlia/proto";
 
-message Command { string Type = 1; }
+message RequestId {
+  string OwnerId = 1;
+  uint64 Index = 2;
+}
+
+message Command {
+  RequestId Id = 1;
+  string Type = 2;
+}
 message Empty {}
 
 service Proxy { rpc Apply(Command) returns (Empty); }

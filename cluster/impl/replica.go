@@ -22,7 +22,7 @@ type Replica struct {
 
 func (r *Replica) Kill() {
 	r.server.GracefulStop()
-	r.log = nil
+	r.log = nil // How to restore???
 }
 
 func (r *Replica) Step(stepTime time.Duration) {
