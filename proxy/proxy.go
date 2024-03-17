@@ -2,72 +2,20 @@ package main
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"log"
-	"math/rand"
-	"net"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
-	pb "github.com/bakalover/parlia/proto"
+	"github.com/bakalover/parlia/proxy/proxy"
 	"github.com/bakalover/tate"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
-
-type Proxy struct {
-	pb.UnimplementedProxyServer
-	client            pb.ReplicaClient
-	logger            *log.Logger
-	mutex             sync.Mutex
-	availableReplicas []string
-	targetAddr        string
-	myAddr            string
-}
 
 const (
 	proxyConfigPath   = "./config/proxy_ports.txt"
 	replicaConfigPath = "./config/replica_config.txt"
 )
-
-// ===============================RPC Service===============================
-func (p *Proxy) Apply(ctx context.Context, command *pb.Command) (*pb.Empty, error) {
-
-	// Context???
-	// TODO: batch window 10ms ~ rpc stream
-
-	p.mutex.Lock()
-	defer p.mutex.Unlock()
-
-	resp, err := p.client.Apply(ctx, command)
-	if err != nil {
-		p.logger.Println("Replica is unavailable")
-		p.ConnToCluster() // Change target Replica
-	}
-
-	return resp, err // If err => client retries
-}
-
-//===============================RPC Service===============================
-
-func (p *Proxy) AvailableReplica() string {
-	return p.availableReplicas[rand.Intn(len(p.availableReplicas))]
-}
-
-func (p *Proxy) ConnToCluster() {
-	replicaAddr := p.AvailableReplica()
-	conn, err := grpc.Dial(replicaAddr, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		p.logger.Printf("Fail to dial: %v", err)
-	} else {
-		p.targetAddr = replicaAddr
-		p.client = pb.NewReplicaClient(conn)
-		log.Printf("Established connection: Proxy <-> Replica | %v <-> %v", p.myAddr, p.targetAddr)
-	}
-}
 
 func main() {
 
@@ -97,16 +45,7 @@ func main() {
 		replicaAddrs = append(replicaAddrs, fmt.Sprintf("localhost:%s", replicaPort))
 	}
 
-	var serverRoutines, cancels tate.Nursery
-
-	defer serverRoutines.Join()
-	defer cancels.Join()
-
-	//=====================Manual Cancelling=====================
-	var serverHandles []*grpc.Server
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-	//=====================Manual Cancelling=====================
+	var proxies []*proxy.Proxy
 
 	proxyScanner := bufio.NewScanner(proxyConfig)
 	for proxyScanner.Scan() {
@@ -118,37 +57,35 @@ func main() {
 
 		proxyAddr := fmt.Sprintf("localhost:%s", portProxy)
 
-		proxy := &Proxy{
-			availableReplicas: replicaAddrs,
-			myAddr:            proxyAddr,
-			logger:            logger,
+		proxy := &proxy.Proxy{
+			AvailableReplicas: replicaAddrs,
+			Addr:              proxyAddr,
+			Logger:            logger,
 		}
+		proxies = append(proxies, proxy)
 
-		// Proxy as client
-		proxy.ConnToCluster()
-
-		// Proxy as server
-		l, err := net.Listen("tcp", proxyAddr)
-		if err != nil {
-			logger.Fatalf("Failed to listen: %v", err)
-		}
-		grpcServer := grpc.NewServer()
-		serverHandles = append(serverHandles, grpcServer)
-		pb.RegisterProxyServer(grpcServer, proxy)
-
-		serverRoutines.Add(func() {
-			grpcServer.Serve(l)
+		var proxyRoutines tate.Nursery
+		proxyRoutines.Add(func() {
+			proxy.Run()
 		})
-
 	}
 
 	//=================================Await===================================
-	cancels.Add(func() {
+
+	//=====================Manual Cancelling=====================
+	sigCh := make(chan os.Signal, 1)
+	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	//=====================Manual Cancelling=====================
+
+	var cancelRoutine tate.Nursery
+	cancelRoutine.Add(func() {
 		<-sigCh
-		for _, h := range serverHandles {
-			h.GracefulStop()
+		for _, p := range proxies {
+			p.ShutDown()
 		}
 	})
+
+	cancelRoutine.Join()
 	//=================================Await===================================
 
 }

@@ -47,7 +47,7 @@ func (cl *Client) SendCommand() {
 	)
 
 	if err != nil {
-		cl.Logger.Printf("Cluster is unavailbale:\nClient:%v -> Proxy:%v", cl.Id, cl.targetAddr)
+		cl.Logger.Printf("Cluster is unavailbale:\nClient:%v <-> Proxy:%v", cl.Id, cl.targetAddr)
 		time.Sleep(cl.Backoff.Next())
 	} else {
 		cl.Backoff.Reset()
