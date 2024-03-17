@@ -28,7 +28,7 @@ func main() {
 		return
 	}
 	defer proxyConfig.Close()
-	clientConfig, err := os.Open(proxyConfigPath)
+	clientConfig, err := os.Open(clientConfigPath)
 	if err != nil {
 		logger.Fatalf("Error opening file: %v", err)
 		return
@@ -60,6 +60,7 @@ func main() {
 			AvailableProxies: proxyAddrs,
 			Id:               clientId,
 			SimTime:          simTime,
+			Backoff:          client.DefaultBackoff,
 		}
 		clientRoutines.Add(func() {
 			cl.Run()

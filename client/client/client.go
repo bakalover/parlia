@@ -17,9 +17,9 @@ type Client struct {
 	Logger           *log.Logger
 	Id               string
 	SimTime          time.Duration
+	Backoff          Backoff
 	requestIndex     uint64
 	rpcClient        proto.ProxyClient
-	backoff          Backoff
 	targetAddr       string
 }
 
@@ -47,10 +47,10 @@ func (cl *Client) SendCommand() {
 	)
 
 	if err != nil {
-		cl.Logger.Printf("Cluster is unavailbale: proxy addr - %v", cl.targetAddr)
-		time.Sleep(cl.backoff.Next())
+		cl.Logger.Printf("Cluster is unavailbale:\nClient:%v -> Proxy:%v", cl.Id, cl.targetAddr)
+		time.Sleep(cl.Backoff.Next())
 	} else {
-		cl.backoff.Reset()
+		cl.Backoff.Reset()
 	}
 }
 
@@ -60,7 +60,7 @@ func (cl *Client) ConnToCluster() {
 	if err != nil {
 		cl.Logger.Fatalf("Fail to dial: %v", err)
 	} else {
-		cl.targetAddr = proxyAddr
+		cl.targetAddr = proxyAddr // Proxy rotation
 		cl.rpcClient = proto.NewProxyClient(conn)
 	}
 }
